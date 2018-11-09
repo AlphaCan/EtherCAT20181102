@@ -142,7 +142,8 @@ int ecx_SDOread(ecx_contextt *context, uint16 slave, uint16 index, uint8 subinde
    /* get new mailbox count value, used as session handle */
    cnt = ec_nextmbxcnt(context->slavelist[slave].mbx_cnt);
    context->slavelist[slave].mbx_cnt = cnt;
-   SDOp->MbxHeader.mbxtype = ECT_MBXT_COE + (cnt << 4); /* CoE */
+   SDOp->MbxHeader.mbxtype = ECT_MBXT_COE + (cnt << 4); /* CoE */ //cnt<<4表示邮箱头序列号与邮箱类型共用一个字节
+   //高四位（bit 12,11,10,9）为canopen数据头协议信息类型,请求
    SDOp->CANOpen = htoes(0x000 + (ECT_COES_SDOREQ << 12)); /* number 9bits service upper 4 bits (SDO request) */
    if (CA)
    {
@@ -153,7 +154,7 @@ int ecx_SDOread(ecx_contextt *context, uint16 slave, uint16 index, uint8 subinde
       SDOp->Command = ECT_SDO_UP_REQ; /* upload request normal */
    }
    SDOp->Index = htoes(index);
-   if (CA && (subindex > 1))
+   if (CA && (subindex > 1))//
    {
       subindex = 1;
    }
