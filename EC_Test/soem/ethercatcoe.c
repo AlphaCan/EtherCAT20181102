@@ -154,7 +154,7 @@ int ecx_SDOread(ecx_contextt *context, uint16 slave, uint16 index, uint8 subinde
       SDOp->Command = ECT_SDO_UP_REQ; /* upload request normal */
    }
    SDOp->Index = htoes(index);
-   if (CA && (subindex > 1))//
+   if (CA && (subindex > 1))//在使用快速上传时子索引为什么要强制置1？？？？？？？
    {
       subindex = 1;
    }

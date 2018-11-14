@@ -344,21 +344,89 @@ char ifbuf[1024];
 
 int main(int argc, char *argv[])
 {
-   ec_adaptert * adapter = NULL;
+
+	pcap_if_t *alldevs;
+	pcap_if_t *d;
+	int inum = 3;
+	int i_open = 0;
+	pcap_t *adhandle;
+	char errbuf_open[PCAP_ERRBUF_SIZE];
+	/* 获取本机设备列表 */
+	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf_open) == -1)
+	{
+		fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf_open);
+		exit(1);
+	}
+	pcap_t *fp;
+	char errbuf[PCAP_ERRBUF_SIZE];
+	u_char* packet = (u_char *)malloc(100);
+	int i;
+	/* 打开输出设备 */
+	/* 跳转到选中的适配器 */
+	for (d = alldevs, i_open = 0; i_open < inum - 1; d = d->next, i_open++);
+	//if ((fp = pcap_open(d->name,            // 设备名
+	//	100,                // 要捕获的部分 (只捕获前100个字节)
+	//	PCAP_OPENFLAG_PROMISCUOUS,  // 混杂模式
+	//	1000,               // 读超时时间
+	//	NULL,               // 远程机器验证
+	//	errbuf              // 错误缓冲
+	//	)) == NULL)
+	//{
+	//	fprintf(stderr, "\nUnable to open the adapter. %s is not supported by WinPcap\n", d->name);
+	//	return -1;
+	//}
+	//char* str = "rpcap://\\Device\\NPF_{FBFC134A-08F7-4414-8E22-B966E4CDAE78}";
+	char* str = (d->name);
+	//* 释放设备列表 */
+	//pcap_freealldevs(alldevs);
+
+
+	ec_adaptert * adapter = NULL;
+	printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
+
+	if (1)
+	{
+		/* create thread to handle slave error handling in OP */
+		osal_thread_create(&thread1, 128000, &ecatcheck, (void*)&ctime);
+		//strcpy(ifbuf, argv[1]);
+		/* start cyclic part */
+		//simpletest(ifbuf);
+		simpletest(str);
+	}
+	else
+	{
+		printf("Usage: simple_test ifname1\n");
+		/* Print the list */
+		printf("Available adapters\n");
+		adapter = ec_find_adapters();
+		while (adapter != NULL)
+		{
+			printf("Description : %s, Device to use for wpcap: %s\n", adapter->desc, adapter->name);
+			adapter = adapter->next;
+		}
+	}
+
+	printf("End program\n");
+	return (0);
+
+
+
+
+/*   ec_adaptert * adapter = NULL;
    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
 
    if (argc > 1)
    {
-      /* create thread to handle slave error handling in OP */
+      /* create thread to handle slave error handling in OP *
       osal_thread_create(&thread1, 128000, &ecatcheck, (void*) &ctime);
       strcpy(ifbuf, argv[1]);
-      /* start cyclic part */
+      /* start cyclic part *
       simpletest(ifbuf);
    }
    else
    {
       printf("Usage: simple_test ifname1\n");
-   	/* Print the list */
+   	/* Print the list *
       printf ("Available adapters\n");
       adapter = ec_find_adapters ();
       while (adapter != NULL)
@@ -369,5 +437,6 @@ int main(int argc, char *argv[])
    }
 
    printf("End program\n");
-   return (0);
+   return (0);*/
+
 }

@@ -139,8 +139,11 @@ int ecx_setupnic(ecx_portt *port, const char *ifname, int secondary)
    *psock = pcap_open(ifname, 65536, PCAP_OPENFLAG_PROMISCUOUS |
                                      PCAP_OPENFLAG_MAX_RESPONSIVENESS |
                                      PCAP_OPENFLAG_NOCAPTURE_LOCAL, -1, NULL , errbuf);
+   
+
    if (NULL == *psock)
    {
+	   printf("err = %s\n",errbuf);
       printf("interface %s could not open with pcap\n", ifname);
       return 0;
    }

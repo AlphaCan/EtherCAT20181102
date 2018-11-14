@@ -969,7 +969,7 @@ int ecx_mbxsend(ecx_contextt *context, uint16 slave,ec_mbxbuft *mbx, int timeout
    int wkc;
 
    wkc = 0;
-   configadr = context->slavelist[slave].configadr;
+   configadr = context->slavelist[slave].configadr;//Éè±¸µØÖ·
    mbxl = context->slavelist[slave].mbx_l;
    if ((mbxl > 0) && (mbxl <= EC_MAXMBX))
    {
