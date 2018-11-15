@@ -38,42 +38,9 @@ void CALLBACK RTthread(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1
     /* do RT control stuff here */
 }
 
-int EL7031setup(uint16 slave)
-{
-    int retval;
-    uint16 u16val;
 
-    // map velocity
-    uint16 map_1c12[4] = {0x0003, 0x1601, 0x1602, 0x1604};
-    uint16 map_1c13[3] = {0x0002, 0x1a01, 0x1a03};
 
-    retval = 0;
-
-    // Set PDO mapping using Complete Access
-    // Strange, writing CA works, reading CA doesn't
-    // This is a protocol error of the slave.
-    retval += ec_SDOwrite(slave, 0x1c12, 0x00, TRUE, sizeof(map_1c12), &map_1c12, EC_TIMEOUTSAFE);
-    retval += ec_SDOwrite(slave, 0x1c13, 0x00, TRUE, sizeof(map_1c13), &map_1c13, EC_TIMEOUTSAFE);
-
-    // bug in EL7031 old firmware, CompleteAccess for reading is not supported even if the slave says it is.
-    ec_slave[slave].CoEdetails &= ~ECT_COEDET_SDOCA;
-
-    // set some motor parameters, just as example
-    u16val = 1200; // max motor current in mA
-//    retval += ec_SDOwrite(slave, 0x8010, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTSAFE);
-    u16val = 150; // motor coil resistance in 0.01ohm
-//    retval += ec_SDOwrite(slave, 0x8010, 0x04, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTSAFE);
-
-    // set other nescessary parameters as needed
-    // .....
-
-    while(EcatError) printf("%s", ec_elist2string());
-
-    printf("EL7031 slave %d set, retval = %d\n", slave, retval);
-    return 1;
-}
-
-int AEPsetup(uint16 slave)
+int DM3E556(uint16 slave)
 {
     int retval;
     uint8 u8val;
@@ -109,7 +76,7 @@ int AEPsetup(uint16 slave)
 
     while(EcatError) printf("%s", ec_elist2string());
 
-    printf("AEP slave %d set, retval = %d\n", slave, retval);
+    printf("DM3E556 slave %d set, retval = %d\n", slave, retval);
     return 1;
 }
 
@@ -138,19 +105,13 @@ void simpletest(char *ifname)
          {
              for(slc = 1; slc <= ec_slavecount; slc++)
              {
-                 // beckhoff EL7031, using ec_slave[].name is not very reliable
-                 if((ec_slave[slc].eep_man == 0x00000002) && (ec_slave[slc].eep_id == 0x1b773052))
-                 {
-                     printf("Found %s at position %d\n", ec_slave[slc].name, slc);
-                     // link slave specific setup to preop->safeop hook
-                     ec_slave[slc].PO2SOconfig = &EL7031setup;
-                 }
+                 
                  // Copley Controls EAP, using ec_slave[].name is not very reliable
                  if((ec_slave[slc].eep_man == 0x000000ab) && (ec_slave[slc].eep_id == 0x00000380))
                  {
                      printf("Found %s at position %d\n", ec_slave[slc].name, slc);
                      // link slave specific setup to preop->safeop hook
-                     ec_slave[slc].PO2SOconfig = &AEPsetup;
+                     ec_slave[slc].PO2SOconfig = &DM3E556;
                  }
              }
          }
@@ -340,49 +301,31 @@ OSAL_THREAD_FUNC ecatcheck(void *lpParam)
     return 0;
 }
 
-char ifbuf[1024];
+
+char* Getifname(pcap_if_t *alldevs,char inum)
+{
+	pcap_if_t *d;
+	int i_open = 0;
+	for (d = alldevs, i_open = 0; i_open < inum - 1; d = d->next, i_open++);
+	return d->name;
+}
+
+
 
 int main(int argc, char *argv[])
 {
 
 	pcap_if_t *alldevs;
-	pcap_if_t *d;
-	int inum = 3;
-	int i_open = 0;
-	pcap_t *adhandle;
 	char errbuf_open[PCAP_ERRBUF_SIZE];
 	/* 获取本机设备列表 */
-	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf_open) == -1)
+	if (pcap_findalldevs(&alldevs, errbuf_open) == -1)
 	{
 		fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf_open);
 		exit(1);
 	}
-	pcap_t *fp;
-	char errbuf[PCAP_ERRBUF_SIZE];
-	u_char* packet = (u_char *)malloc(100);
-	int i;
-	/* 打开输出设备 */
-	/* 跳转到选中的适配器 */
-	for (d = alldevs, i_open = 0; i_open < inum - 1; d = d->next, i_open++);
-	//if ((fp = pcap_open(d->name,            // 设备名
-	//	100,                // 要捕获的部分 (只捕获前100个字节)
-	//	PCAP_OPENFLAG_PROMISCUOUS,  // 混杂模式
-	//	1000,               // 读超时时间
-	//	NULL,               // 远程机器验证
-	//	errbuf              // 错误缓冲
-	//	)) == NULL)
-	//{
-	//	fprintf(stderr, "\nUnable to open the adapter. %s is not supported by WinPcap\n", d->name);
-	//	return -1;
-	//}
-	//char* str = "rpcap://\\Device\\NPF_{FBFC134A-08F7-4414-8E22-B966E4CDAE78}";
-	char* str = (d->name);
-	//* 释放设备列表 */
-	//pcap_freealldevs(alldevs);
-
 
 	ec_adaptert * adapter = NULL;
-	printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
+	printf("EtherCAT Master Simple Test\n");
 
 	if (1)
 	{
@@ -391,7 +334,7 @@ int main(int argc, char *argv[])
 		//strcpy(ifbuf, argv[1]);
 		/* start cyclic part */
 		//simpletest(ifbuf);
-		simpletest(str);
+		simpletest(Getifname(alldevs,4));
 	}
 	else
 	{
@@ -408,8 +351,6 @@ int main(int argc, char *argv[])
 
 	printf("End program\n");
 	return (0);
-
-
 
 
 /*   ec_adaptert * adapter = NULL;

@@ -119,7 +119,7 @@ int ecx_setupnic(ecx_portt *port, const char *ifname, int secondary)
    }
    else
    {
-      InitializeCriticalSection(&(port->getindex_mutex));//初始化临街资源，作用于互斥变量
+      InitializeCriticalSection(&(port->getindex_mutex));
       InitializeCriticalSection(&(port->tx_mutex));
       InitializeCriticalSection(&(port->rx_mutex));
       port->sockhandle        = NULL;
@@ -139,16 +139,13 @@ int ecx_setupnic(ecx_portt *port, const char *ifname, int secondary)
    *psock = pcap_open(ifname, 65536, PCAP_OPENFLAG_PROMISCUOUS |
                                      PCAP_OPENFLAG_MAX_RESPONSIVENESS |
                                      PCAP_OPENFLAG_NOCAPTURE_LOCAL, -1, NULL , errbuf);
-   
-
    if (NULL == *psock)
    {
-	   printf("err = %s\n",errbuf);
       printf("interface %s could not open with pcap\n", ifname);
       return 0;
    }
 
-    for (i = 0; i < EC_MAXBUF; i++)//数据报头文件
+    for (i = 0; i < EC_MAXBUF; i++)
    {
       ec_setupheader(&(port->txbuf[i]));
       port->rxbufstat[i] = EC_BUF_EMPTY;
@@ -164,11 +161,11 @@ int ecx_setupnic(ecx_portt *port, const char *ifname, int secondary)
  */
 int ecx_closenic(ecx_portt *port)
 {
-   timeEndPeriod(15);//结束1ms的高精度定时，恢复以15ms计时
+   timeEndPeriod(15);
 
    if (port->sockhandle != NULL)
    {
-      DeleteCriticalSection(&(port->getindex_mutex));//删除临界资源
+      DeleteCriticalSection(&(port->getindex_mutex));
       DeleteCriticalSection(&(port->tx_mutex));
       DeleteCriticalSection(&(port->rx_mutex));
       pcap_close(port->sockhandle);
@@ -210,7 +207,7 @@ int ecx_getindex(ecx_portt *port)
    int idx;
    int cnt;
 
-   EnterCriticalSection(&(port->getindex_mutex));//进入临界锁
+   EnterCriticalSection(&(port->getindex_mutex));
 
    idx = port->lastidx + 1;
    /* index can't be larger than buffer array */
@@ -272,7 +269,7 @@ int ecx_outframe(ecx_portt *port, int idx, int stacknumber)
    }
    lp = (*stack->txbuflength)[idx];
    (*stack->rxbufstat)[idx] = EC_BUF_TX;
-   rval = pcap_sendpacket(*stack->sock, (*stack->txbuf)[idx], lp);//发送数据包
+   rval = pcap_sendpacket(*stack->sock, (*stack->txbuf)[idx], lp);
    if (rval == PCAP_ERROR)
    {
       (*stack->rxbufstat)[idx] = EC_BUF_EMPTY;
